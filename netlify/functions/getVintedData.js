@@ -1,5 +1,5 @@
 const fetch = require('node-fetch');
-const fetch = require('node-fetch');
+
 exports.handler = async function(event) {
     try {
         const vintedUrl = JSON.parse(event.body).url;

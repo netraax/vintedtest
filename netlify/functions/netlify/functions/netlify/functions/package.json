@@ -1,6 +1,9 @@
 {
   "name": "vinted-api",
   "version": "1.0.0",
+  "scripts": {
+    "build": "echo 'No build required'"
+  },
   "dependencies": {
     "node-fetch": "^2.6.7"
   }

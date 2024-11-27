@@ -172,25 +172,49 @@
     </div>
 
     <script>
-        function analyzeProfile() {
-            const url = document.getElementById('profile-url').value;
-            if (!url) {
-                alert('Veuillez entrer une URL de profil Vinted valide');
-                return;
+ <script>
+    async function analyzeProfile() {
+        const url = document.getElementById('profile-url').value;
+        if (!url || !url.includes('vinted.fr/member/')) {
+            alert('Veuillez entrer une URL de profil Vinted valide');
+            return;
+        }
+
+        try {
+            document.getElementById('stats').style.display = 'block';
+            setLoading(true);
+
+            const response = await fetch('/.netlify/functions/getVintedData', {
+                method: 'POST',
+                body: JSON.stringify({ url: url })
+            });
+
+            if (!response.ok) {
+                throw new Error('Erreur réseau');
             }
 
-            // Ici, nous simulons l'analyse pour la démonstration
-            // Dans une vraie application, vous devrez implémenter l'API pour récupérer les données
-            document.getElementById('stats').style.display = 'block';
+            const data = await response.json();
             
-            // Simulation de données
-            setTimeout(() => {
-                document.getElementById('total-items').textContent = '42';
-                document.getElementById('total-sold').textContent = '156';
-                document.getElementById('total-likes').textContent = '873';
-                document.getElementById('avg-price').textContent = '15.99€';
-            }, 1000);
+            document.getElementById('total-items').textContent = data.totalItems;
+            document.getElementById('total-sold').textContent = data.totalSold;
+            document.getElementById('total-likes').textContent = data.totalLikes;
+            document.getElementById('avg-price').textContent = data.avgPrice;
+
+        } catch (error) {
+            alert('Erreur lors de l\'analyse du profil. Veuillez réessayer.');
+            console.error(error);
+        } finally {
+            setLoading(false);
         }
+    }
+
+    function setLoading(isLoading) {
+        const elements = document.querySelectorAll('.stat-value');
+        elements.forEach(el => {
+            el.style.opacity = isLoading ? '0.5' : '1';
+        });
+    }
+</script>
     </script>
 </body>
 </html>

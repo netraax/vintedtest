@@ -172,7 +172,6 @@
     </div>
 
     <script>
- <script>
     async function analyzeProfile() {
         const url = document.getElementById('profile-url').value;
         if (!url || !url.includes('vinted.fr/member/')) {
@@ -181,11 +180,19 @@
         }
 
         try {
+            // Afficher que ça charge
             document.getElementById('stats').style.display = 'block';
-            setLoading(true);
+            const elements = document.querySelectorAll('.stat-value');
+            elements.forEach(el => {
+                el.textContent = 'Chargement...';
+            });
 
+            // Appel à notre fonction Netlify
             const response = await fetch('/.netlify/functions/getVintedData', {
                 method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
                 body: JSON.stringify({ url: url })
             });
 
@@ -195,26 +202,17 @@
 
             const data = await response.json();
             
+            // Mise à jour des statistiques
             document.getElementById('total-items').textContent = data.totalItems;
             document.getElementById('total-sold').textContent = data.totalSold;
             document.getElementById('total-likes').textContent = data.totalLikes;
             document.getElementById('avg-price').textContent = data.avgPrice;
 
         } catch (error) {
-            alert('Erreur lors de l\'analyse du profil. Veuillez réessayer.');
-            console.error(error);
-        } finally {
-            setLoading(false);
+            console.error('Erreur:', error);
+            alert('Erreur lors de l\'analyse du profil');
         }
     }
-
-    function setLoading(isLoading) {
-        const elements = document.querySelectorAll('.stat-value');
-        elements.forEach(el => {
-            el.style.opacity = isLoading ? '0.5' : '1';
-        });
-    }
 </script>
-    </script>
 </body>
 </html>

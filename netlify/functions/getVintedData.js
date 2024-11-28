@@ -1,4 +1,4 @@
-const chromium = require('chrome-aws-lambda');
+const playwright = require('playwright-aws-lambda');
 
 exports.handler = async function(event) {
     let browser = null;
@@ -7,29 +7,18 @@ exports.handler = async function(event) {
         console.log('URL reçue:', vintedUrl);
 
         // Lancer le navigateur
-        browser = await chromium.puppeteer.launch({
-            args: chromium.args,
-            defaultViewport: chromium.defaultViewport,
-            executablePath: await chromium.executablePath,
-            headless: true,
-        });
-
-        const page = await browser.newPage();
-        await page.goto(vintedUrl, { waitUntil: 'networkidle0' });
+        browser = await playwright.launchChromium();
+        const context = await browser.newContext();
+        const page = await context.newPage();
+        
+        // Aller sur la page
+        await page.goto(vintedUrl, { waitUntil: 'networkidle' });
 
         // Extraire les données
         const data = await page.evaluate(() => {
             const items = document.querySelectorAll('.feed-grid__item');
-            const likes = document.querySelectorAll('.item-likes');
-            const prices = document.querySelectorAll('.item-price');
-
             return {
-                totalItems: items.length,
-                totalLikes: Array.from(likes).reduce((acc, like) => acc + parseInt(like.textContent) || 0, 0),
-                avgPrice: Array.from(prices).reduce((acc, price) => {
-                    const value = parseFloat(price.textContent.replace('€', '').trim()) || 0;
-                    return acc + value;
-                }, 0) / (prices.length || 1)
+                totalItems: items.length || 0
             };
         });
 
@@ -37,9 +26,9 @@ exports.handler = async function(event) {
             statusCode: 200,
             body: JSON.stringify({
                 totalItems: data.totalItems,
-                totalSold: "Information à venir",
-                totalLikes: data.totalLikes,
-                avgPrice: `${data.avgPrice.toFixed(2)}€`
+                totalSold: "Bientôt disponible",
+                totalLikes: "Bientôt disponible",
+                avgPrice: "Bientôt disponible"
             })
         };
 
@@ -50,7 +39,7 @@ exports.handler = async function(event) {
             body: JSON.stringify({ error: "Erreur lors de l'analyse du profil" })
         };
     } finally {
-        if (browser !== null) {
+        if (browser) {
             await browser.close();
         }
     }

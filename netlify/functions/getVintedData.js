@@ -1,60 +1,57 @@
-const fetch = require('node-fetch');
+const chromium = require('chrome-aws-lambda');
 
 exports.handler = async function(event) {
+    let browser = null;
     try {
         const vintedUrl = JSON.parse(event.body).url;
         console.log('URL reçue:', vintedUrl);
-        
-        const userId = vintedUrl.split('/member/')[1].split('-')[0];
-        console.log('UserId extrait:', userId);
-        
-        const response = await fetch(`https://www.vinted.fr/api/v2/catalog/items?user_id=${userId}&per_page=1`, {
-            headers: {
-                'Accept': '*/*',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/91.0.4472.124',
-                'Accept-Language': 'fr-FR,fr;q=0.9',
-                'Cache-Control': 'no-cache',
-                'Pragma': 'no-cache'
-            }
+
+        // Lancer le navigateur
+        browser = await chromium.puppeteer.launch({
+            args: chromium.args,
+            defaultViewport: chromium.defaultViewport,
+            executablePath: await chromium.executablePath,
+            headless: true,
         });
 
-        // Vérifier si la réponse est ok
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
+        const page = await browser.newPage();
+        await page.goto(vintedUrl, { waitUntil: 'networkidle0' });
 
-        // Récupérer le texte brut d'abord
-        const text = await response.text();
-        console.log('Réponse brute:', text);
+        // Extraire les données
+        const data = await page.evaluate(() => {
+            const items = document.querySelectorAll('.feed-grid__item');
+            const likes = document.querySelectorAll('.item-likes');
+            const prices = document.querySelectorAll('.item-price');
 
-        let data;
-        try {
-            data = JSON.parse(text);
-        } catch (e) {
-            console.error('Erreur parsing JSON:', e);
-            throw new Error('Impossible de parser la réponse de Vinted');
-        }
+            return {
+                totalItems: items.length,
+                totalLikes: Array.from(likes).reduce((acc, like) => acc + parseInt(like.textContent) || 0, 0),
+                avgPrice: Array.from(prices).reduce((acc, price) => {
+                    const value = parseFloat(price.textContent.replace('€', '').trim()) || 0;
+                    return acc + value;
+                }, 0) / (prices.length || 1)
+            };
+        });
 
         return {
             statusCode: 200,
-            headers: {
-                'Content-Type': 'application/json'
-            },
             body: JSON.stringify({
-                totalItems: data.metadata?.total_entries || 0,
-                totalSold: "Information non disponible",
-                totalLikes: "Information non disponible",
-                avgPrice: "Information non disponible"
+                totalItems: data.totalItems,
+                totalSold: "Information à venir",
+                totalLikes: data.totalLikes,
+                avgPrice: `${data.avgPrice.toFixed(2)}€`
             })
         };
+
     } catch (error) {
-        console.error('Erreur détaillée:', error);
+        console.error('Erreur:', error);
         return {
             statusCode: 500,
-            body: JSON.stringify({ 
-                error: "Erreur lors de l'analyse du profil",
-                details: error.message 
-            })
+            body: JSON.stringify({ error: "Erreur lors de l'analyse du profil" })
         };
+    } finally {
+        if (browser !== null) {
+            await browser.close();
+        }
     }
 };

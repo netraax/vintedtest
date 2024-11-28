@@ -2,7 +2,7 @@
   "name": "vinted-api",
   "version": "1.0.0",
   "dependencies": {
-    "node-fetch": "^2.6.7",
-    "cheerio": "1.0.0-rc.12"
+    "@sparticuz/chromium": "^119.0.0",
+    "puppeteer-core": "^19.11.1"
   }
 }

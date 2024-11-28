@@ -1,218 +1,95 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vinted Analyzer</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        body {
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
-        }
-
-        .container {
-            width: 100%;
-            max-width: 800px;
-            text-align: center;
-            margin-top: 50px;
-        }
-
-        h1 {
-            color: #2c3e50;
-            font-size: 2.5em;
-            margin-bottom: 20px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .description {
-            color: #34495e;
-            font-size: 1.1em;
-            margin-bottom: 40px;
-            line-height: 1.6;
-        }
-
-        .search-container {
-            background: white;
-            padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-            width: 90%;
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
-        .search-box {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-
-        input[type="url"] {
-            flex: 1;
-            padding: 12px 20px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 1em;
-            transition: border-color 0.3s ease;
-        }
-
-        input[type="url"]:focus {
-            outline: none;
-            border-color: #09B1BA;
-        }
-
-        button {
-            background-color: #09B1BA;
-            color: white;
-            border: none;
-            padding: 12px 25px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1em;
-            transition: background-color 0.3s ease;
-        }
-
-        button:hover {
-            background-color: #078087;
-        }
-
-        .example {
-            color: #7f8c8d;
-            font-size: 0.9em;
-            margin-top: 10px;
-        }
-
-        .stats-container {
-            display: none; /* Caché par défaut */
-            margin-top: 30px;
-            background: white;
-            padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 20px;
-            padding: 20px;
-        }
-
-        .stat-box {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-            text-align: center;
-        }
-
-        .stat-value {
-            font-size: 1.5em;
-            color: #09B1BA;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-
-        .stat-label {
-            color: #666;
-            font-size: 0.9em;
-        }
-    </style>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>Vinted Analyzer</title>
+   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="container">
-        <h1>Vinted Analyzer</h1>
-        <p class="description">
-            Analysez n'importe quel profil Vinted en quelques secondes.<br>
-            Obtenez des statistiques détaillées sur les ventes, les likes et plus encore !
-        </p>
+   <div class="container">
+       <h1>Vinted Analyzer</h1>
+       <p class="description">
+           Analysez n'importe quel profil Vinted en quelques secondes.<br>
+           Téléchargez une capture d'écran du profil pour obtenir les statistiques !
+       </p>
 
-<div class="search-container">
-    <div class="search-box">
-        <input type="file" 
-               accept="image/*" 
-               id="screenshot-input">
-        <button onclick="analyzeScreenshot()">Analyser</button>
-    </div>
-    <p class="example">
-        Uploadez une capture d'écran d'un profil Vinted
-    </p>
-</div>
+       <div class="search-container">
+           <div class="search-box">
+               <input type="file" 
+                      accept="image/*" 
+                      id="screenshot-input"
+                      class="file-input">
+               <button onclick="analyzeScreenshot()">Analyser</button>
+           </div>
+           <p class="example">
+               Format accepté : Capture d'écran d'un profil Vinted (JPG, PNG)
+           </p>
+       </div>
 
-        <div class="stats-container" id="stats">
-            <div class="stats-grid">
-                <div class="stat-box">
-                    <div class="stat-value" id="total-items">0</div>
-                    <div class="stat-label">Articles en vente</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-value" id="total-sold">0</div>
-                    <div class="stat-label">Articles vendus</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-value" id="total-likes">0</div>
-                    <div class="stat-label">Likes reçus</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-value" id="avg-price">0€</div>
-                    <div class="stat-label">Prix moyen</div>
-                </div>
-            </div>
-        </div>
-    </div>
+       <div class="stats-container" id="stats">
+           <div class="stats-grid">
+               <div class="stat-box">
+                   <div class="stat-value" id="total-items">0</div>
+                   <div class="stat-label">Articles en vente</div>
+               </div>
+               <div class="stat-box">
+                   <div class="stat-value" id="total-sold">0</div>
+                   <div class="stat-label">Articles vendus</div>
+               </div>
+               <div class="stat-box">
+                   <div class="stat-value" id="total-likes">0</div>
+                   <div class="stat-label">Évaluations</div>
+               </div>
+           </div>
+       </div>
+   </div>
 
-    <script>
-    async function analyzeProfile() {
-        const url = document.getElementById('profile-url').value;
-        if (!url || !url.includes('vinted.fr/member/')) {
-            alert('Veuillez entrer une URL de profil Vinted valide');
-            return;
-        }
+   <script>
+       async function analyzeScreenshot() {
+           const input = document.getElementById('screenshot-input');
+           const file = input.files[0];
+           
+           if (!file) {
+               alert('Veuillez sélectionner une image');
+               return;
+           }
 
-        try {
-            // Afficher que ça charge
-            document.getElementById('stats').style.display = 'block';
-            const elements = document.querySelectorAll('.stat-value');
-            elements.forEach(el => {
-                el.textContent = 'Chargement...';
-            });
+           // Afficher l'état de chargement
+           document.getElementById('stats').style.display = 'block';
+           const elements = document.querySelectorAll('.stat-value');
+           elements.forEach(el => {
+               el.textContent = 'Chargement...';
+           });
 
-            // Appel à notre fonction Netlify
-            const response = await fetch('/.netlify/functions/getVintedData', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ url: url })
-            });
+           try {
+               // Convertir l'image en base64
+               const reader = new FileReader();
+               reader.readAsDataURL(file);
+               
+               reader.onload = async () => {
+                   const response = await fetch('/.netlify/functions/getVintedData', {
+                       method: 'POST',
+                       headers: {
+                           'Content-Type': 'application/json',
+                       },
+                       body: JSON.stringify({ image: reader.result })
+                   });
 
-            if (!response.ok) {
-                throw new Error('Erreur réseau');
-            }
-
-            const data = await response.json();
-            
-            // Mise à jour des statistiques
-            document.getElementById('total-items').textContent = data.totalItems;
-            document.getElementById('total-sold').textContent = data.totalSold;
-            document.getElementById('total-likes').textContent = data.totalLikes;
-            document.getElementById('avg-price').textContent = data.avgPrice;
-
-        } catch (error) {
-            console.error('Erreur:', error);
-            alert('Erreur lors de l\'analyse du profil');
-        }
-    }
-</script>
+                   if (!response.ok) throw new Error('Erreur réseau');
+                   
+                   const data = await response.json();
+                   
+                   // Mettre à jour l'interface
+                   document.getElementById('total-items').textContent = data.articlesEnVente;
+                   document.getElementById('total-sold').textContent = data.articlesVendus;
+                   document.getElementById('total-likes').textContent = data.evaluations;
+               };
+           } catch (error) {
+               console.error('Erreur:', error);
+               alert('Erreur lors de l\'analyse de l\'image');
+           }
+       }
+   </script>
 </body>
 </html>

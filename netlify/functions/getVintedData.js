@@ -9,29 +9,47 @@ exports.handler = async function(event) {
         browser = await puppeteer.launch({
             args: [...chromium.args, '--no-sandbox'],
             executablePath: await chromium.executablePath(),
-            headless: "new",
-            timeout: 8000
+            headless: "new"
         });
 
         const page = await browser.newPage();
-        await page.setDefaultNavigationTimeout(8000);
-        
-        console.log('Navigating to:', vintedUrl);
-        await page.goto(vintedUrl);
-        console.log('Page loaded');
+        await page.goto(vintedUrl, {waitUntil: 'networkidle0'});
 
+        console.log('Analysant la page...');
         const stats = await page.evaluate(() => {
-            console.log('Executing page evaluation');
-            return {
-                articles: document.querySelector('.profile__items-count')?.textContent || '0',
-                evaluations: document.querySelector('.profile__rating')?.textContent || '0',
-                abonnés: document.querySelector('.profile__followers')?.textContent || '0'
+            // Fonction helper pour extraire le texte
+            const getStats = () => {
+                const allStats = Array.from(document.querySelectorAll('.web_ui__Text__text'));
+                const stats = {
+                    articlesEnVente: 0,
+                    articlesVendus: 0,
+                    tauxDeConversion: '0%'
+                };
+
+                allStats.forEach(stat => {
+                    const text = stat.textContent;
+                    if (text.includes('vente')) {
+                        stats.articlesEnVente = parseInt(text) || 0;
+                    } else if (text.includes('vendu')) {
+                        stats.articlesVendus = parseInt(text) || 0;
+                    }
+                });
+
+                // Calculer le taux de conversion
+                if (stats.articlesVendus > 0) {
+                    const total = stats.articlesEnVente + stats.articlesVendus;
+                    stats.tauxDeConversion = `${((stats.articlesVendus / total) * 100).toFixed(1)}%`;
+                }
+
+                return stats;
             };
+
+            return getStats();
         });
 
+        console.log('Stats trouvées:', stats);
         return { statusCode: 200, body: JSON.stringify(stats) };
     } catch (error) {
-        console.error('Error:', error);
         return { statusCode: 500, body: JSON.stringify({ error: error.message }) };
     } finally {
         if (browser) await browser.close();

@@ -1,18 +1,17 @@
-const { Configuration, OpenAIApi } = require('openai');
+const { Configuration, OpenAIApi } = require("openai");
 
-// Fonction principale
 exports.handler = async function (event) {
-    // Configuration de l'API OpenAI
-    const configuration = new Configuration({
-        apiKey: process.env.OPENAI_API_KEY, // Charge la clé depuis les variables d'environnement
-    });
-    const openai = new OpenAIApi(configuration);
-
     try {
-        // Récupère l'image envoyée via le body de la requête
+        // Parse l'image reçue dans la requête
         const { image } = JSON.parse(event.body);
 
-        // Appelle l'API OpenAI pour analyser l'image
+        // Configuration de l'API OpenAI
+        const configuration = new Configuration({
+            apiKey: process.env.OPENAI_API_KEY, // Récupère la clé API depuis les variables d'environnement
+        });
+        const openai = new OpenAIApi(configuration);
+
+        // Appel à l'API OpenAI pour analyser l'image
         const response = await openai.createImageAnalysis({
             model: "gpt-4-vision-preview",
             messages: [
@@ -32,14 +31,13 @@ exports.handler = async function (event) {
             ],
         });
 
-        // Retourne les données en réponse
+        // Retourne les données analysées
         return {
             statusCode: 200,
             body: JSON.stringify(response.data),
         };
     } catch (error) {
-        // Gestion des erreurs
-        console.error(error);
+        console.error("Erreur pendant l'analyse :", error.message);
         return {
             statusCode: 500,
             body: JSON.stringify({ error: error.message }),

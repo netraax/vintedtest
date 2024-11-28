@@ -1,40 +1,38 @@
-const { createWorker } = require('tesseract.js');
+const { Configuration, OpenAIApi } = require('openai');
 
 exports.handler = async function(event) {
+    const configuration = new Configuration({
+        apiKey: process.env.OPENAI_API_KEY // On mettra la clé dans les variables d'environnement Netlify
+    });
+    const openai = new OpenAIApi(configuration);
+
     try {
-        if (!event.body) {
-            throw new Error('No image data received');
-        }
-
-        const imageData = JSON.parse(event.body).image;
-        console.log('Received image data, starting OCR...');
-
-        const worker = await createWorker('fra');
-        console.log('Worker created');
-
-        const { data: { text } } = await worker.recognize(imageData);
-        console.log('OCR text extracted:', text);
-
-        await worker.terminate();
-
-        // Extraire les chiffres du texte
-        const numbers = {
-            articlesEnVente: text.match(/(\d+)\s*articles? en vente/i)?.[1] || '0',
-            articlesVendus: text.match(/(\d+)\s*articles? vendus/i)?.[1] || '0',
-            evaluations: text.match(/(\d+)\s*évaluations?/i)?.[1] || '0'
-        };
-
-        console.log('Extracted numbers:', numbers);
+        const { image } = JSON.parse(event.body);
+        
+        const response = await openai.createImageAnalysis({
+            model: "gpt-4-vision-preview",
+            messages: [
+                {
+                    role: "user",
+                    content: [
+                        {
+                            type: "text",
+                            text: "Analyse cette capture d'écran de profil Vinted et extrait : nombre d'articles en vente, articles vendus, et évaluations."
+                        },
+                        {
+                            type: "image_url",
+                            image_url: image
+                        }
+                    ]
+                }
+            ]
+        });
 
         return {
             statusCode: 200,
-            body: JSON.stringify(numbers)
+            body: JSON.stringify(response.data)
         };
     } catch (error) {
-        console.error('Error:', error);
-        return {
-            statusCode: 500,
-            body: JSON.stringify({ error: error.message })
-        };
+        return { statusCode: 500, body: JSON.stringify({ error: error.message }) };
     }
 };

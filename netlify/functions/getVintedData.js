@@ -1,28 +1,44 @@
-const { createWorker } = require('tesseract.js');
+async function analyzeScreenshot() {
+    const input = document.getElementById('screenshot-input');
+    const file = input.files[0];
+    
+    if (!file) {
+        alert('Veuillez sélectionner une image');
+        return;
+    }
 
-exports.handler = async function(event) {
+    // Afficher l'état de chargement
+    document.getElementById('stats').style.display = 'block';
+    const elements = document.querySelectorAll('.stat-value');
+    elements.forEach(el => {
+        el.textContent = 'Chargement...';
+    });
+
     try {
-        const imageData = JSON.parse(event.body).image;
+        // Convertir l'image en base64
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
         
-        const worker = await createWorker('fra');
-        const { data: { text } } = await worker.recognize(imageData);
-        await worker.terminate();
+        reader.onload = async () => {
+            const response = await fetch('/.netlify/functions/getVintedData', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ image: reader.result })
+            });
 
-        // Extraire les chiffres avec des regex
-        const matches = {
-            articlesEnVente: text.match(/(\d+)\s*articles? en vente/i)?.[1] || '0',
-            articlesVendus: text.match(/(\d+)\s*articles? vendus/i)?.[1] || '0',
-            evaluations: text.match(/(\d+)\s*évaluations?/i)?.[1] || '0'
-        };
-
-        return {
-            statusCode: 200,
-            body: JSON.stringify(matches)
+            if (!response.ok) throw new Error('Erreur réseau');
+            
+            const data = await response.json();
+            
+            // Mettre à jour l'interface
+            document.getElementById('total-items').textContent = data.articlesEnVente;
+            document.getElementById('total-sold').textContent = data.articlesVendus;
+            document.getElementById('total-likes').textContent = data.evaluations;
         };
     } catch (error) {
-        return { 
-            statusCode: 500, 
-            body: JSON.stringify({ error: error.message }) 
-        };
+        console.error('Erreur:', error);
+        alert('Erreur lors de l\'analyse de l\'image');
     }
-};
+}

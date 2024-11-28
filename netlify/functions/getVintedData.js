@@ -1,46 +1,40 @@
-const playwright = require('playwright-aws-lambda');
+const fetch = require('node-fetch');
 
 exports.handler = async function(event) {
-    let browser = null;
     try {
         const vintedUrl = JSON.parse(event.body).url;
         console.log('URL reçue:', vintedUrl);
-
-        // Lancer le navigateur
-        browser = await playwright.launchChromium();
-        const context = await browser.newContext();
-        const page = await context.newPage();
         
-        // Aller sur la page
-        await page.goto(vintedUrl, { waitUntil: 'networkidle' });
-
-        // Extraire les données
-        const data = await page.evaluate(() => {
-            const items = document.querySelectorAll('.feed-grid__item');
-            return {
-                totalItems: items.length || 0
-            };
+        const userId = vintedUrl.split('/member/')[1].split('-')[0];
+        console.log('UserId extrait:', userId);
+        
+        // Appel à l'API Vinted
+        const response = await fetch(`https://www.vinted.fr/api/v2/users/${userId}`, {
+            headers: {
+                'Accept': 'application/json',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            }
         });
 
+        const userData = await response.json();
+        
         return {
             statusCode: 200,
+            headers: {
+                'Content-Type': 'application/json'
+            },
             body: JSON.stringify({
-                totalItems: data.totalItems,
-                totalSold: "Bientôt disponible",
-                totalLikes: "Bientôt disponible",
-                avgPrice: "Bientôt disponible"
+                totalItems: userData.items_count || 0,
+                totalSold: userData.sold_items_count || 0,
+                totalLikes: 'à venir',
+                avgPrice: 'à venir'
             })
         };
-
     } catch (error) {
         console.error('Erreur:', error);
         return {
             statusCode: 500,
-            body: JSON.stringify({ error: "Erreur lors de l'analyse du profil" })
+            body: JSON.stringify({ error: "Une erreur s'est produite lors de l'analyse du profil" })
         };
-    } finally {
-        if (browser) {
-            await browser.close();
-        }
     }
 };

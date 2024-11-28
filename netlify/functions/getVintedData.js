@@ -1,37 +1,48 @@
-const tesseract = require("tesseract.js");
+const { Configuration, OpenAIApi } = require('openai');
 
+// Fonction principale
 exports.handler = async function (event) {
-    const { image } = JSON.parse(event.body);
+    // Configuration de l'API OpenAI
+    const configuration = new Configuration({
+        apiKey: process.env.OPENAI_API_KEY, // Charge la clé depuis les variables d'environnement
+    });
+    const openai = new OpenAIApi(configuration);
 
     try {
-        // 1. Extraire le texte de l'image
-        const { data: { text } } = await tesseract.recognize(image);
+        // Récupère l'image envoyée via le body de la requête
+        const { image } = JSON.parse(event.body);
 
-        // 2. Analyser avec GPT
-        const configuration = new Configuration({
-            apiKey: process.env.OPENAI_API_KEY,
-        });
-        const openai = new OpenAIApi(configuration);
-
-        const response = await openai.createChatCompletion({
-            model: "gpt-4",
+        // Appelle l'API OpenAI pour analyser l'image
+        const response = await openai.createImageAnalysis({
+            model: "gpt-4-vision-preview",
             messages: [
                 {
                     role: "user",
-                    content: `Voici un texte extrait d'une capture d'écran Vinted : "${text}". 
-                    Analyse et donne les informations suivantes : 
-                    - Nombre d'articles en vente
-                    - Nombre d'articles vendus
-                    - Nombre d'évaluations.`,
+                    content: [
+                        {
+                            type: "text",
+                            text: "Analyse cette capture d'écran de profil Vinted et extrait : nombre d'articles en vente, articles vendus, et évaluations.",
+                        },
+                        {
+                            type: "image_url",
+                            image_url: image,
+                        },
+                    ],
                 },
             ],
         });
 
+        // Retourne les données en réponse
         return {
             statusCode: 200,
-            body: JSON.stringify(response.data.choices[0].message.content),
+            body: JSON.stringify(response.data),
         };
     } catch (error) {
-        return { statusCode: 500, body: JSON.stringify({ error: error.message }) };
+        // Gestion des erreurs
+        console.error(error);
+        return {
+            statusCode: 500,
+            body: JSON.stringify({ error: error.message }),
+        };
     }
 };

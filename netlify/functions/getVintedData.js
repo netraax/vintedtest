@@ -3,9 +3,11 @@ const fetch = require('node-fetch');
 exports.handler = async function(event) {
     try {
         const vintedUrl = JSON.parse(event.body).url;
+        console.log('URL reçue:', vintedUrl);
         
         // Extraire l'ID utilisateur de l'URL Vinted
         const userId = vintedUrl.split('/member/')[1].split('-')[0];
+        console.log('UserId extrait:', userId);
         
         // Appel à l'API Vinted
         const response = await fetch(`https://www.vinted.fr/api/v2/users/${userId}`, {
@@ -16,11 +18,11 @@ exports.handler = async function(event) {
         });
 
         const userData = await response.json();
+        console.log('Réponse API:', userData);
         
-        // Récupérer les statistiques de l'utilisateur
+        // Vérifier si on a bien les données
         const totalItems = userData.items_count || 0;
         const totalSold = userData.sold_items_count || 0;
-        // Les likes nécessitent un appel supplémentaire à l'API items
 
         return {
             statusCode: 200,
@@ -35,10 +37,10 @@ exports.handler = async function(event) {
             })
         };
     } catch (error) {
-        console.error('Erreur:', error);
+        console.error('Erreur détaillée:', error);
         return {
             statusCode: 500,
-            body: JSON.stringify({ error: "Une erreur s'est produite lors de l'analyse du profil" })
+            body: JSON.stringify({ error: `Erreur: ${error.message}` })
         };
     }
 };

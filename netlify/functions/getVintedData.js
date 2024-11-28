@@ -1,42 +1,29 @@
-const chromium = require('@sparticuz/chromium');
-const puppeteer = require('puppeteer-core');
+const fetch = require('node-fetch');
 
 exports.handler = async function(event) {
-    let browser = null;
     try {
         const vintedUrl = JSON.parse(event.body).url;
+        // Get user ID from URL
+        const userId = vintedUrl.split('/member/')[1]?.split('-')[0];
         
-        browser = await puppeteer.launch({
-            args: [...chromium.args, '--no-sandbox'],
-            executablePath: await chromium.executablePath(),
-            headless: "new",
-            defaultViewport: chromium.defaultViewport,
-            timeout: 5000
+        const response = await fetch(`https://www.vinted.fr/api/v2/users/${userId}/items?per_page=1`, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0',
+                'Accept': 'application/json'
+            }
         });
 
-        const page = await browser.newPage();
-        await page.setDefaultNavigationTimeout(5000);
-        await page.goto(vintedUrl, {waitUntil: 'domcontentloaded'});
+        const data = await response.json();
 
-        const stats = await page.evaluate(() => {
-            const numberFromText = text => parseInt(text.match(/\d+/)?.[0] || '0');
-            const allDivs = document.querySelectorAll('div');
-            let enVente = 0;
-            let vendus = 0;
-
-            allDivs.forEach(div => {
-                const text = div.textContent;
-                if (text.includes('en vente')) enVente = numberFromText(text);
-                if (text.includes('vendus')) vendus = numberFromText(text);
-            });
-
-            return {enVente, vendus};
-        });
-
-        return { statusCode: 200, body: JSON.stringify(stats) };
+        return {
+            statusCode: 200,
+            body: JSON.stringify({
+                itemsCount: data.user?.total_items_count || 0,
+                rating: data.user?.feedback_reputation || 0,
+                transactions: data.user?.transaction_count || 0
+            })
+        };
     } catch (error) {
         return { statusCode: 500, body: JSON.stringify({ error: error.message }) };
-    } finally {
-        if (browser) await browser.close();
     }
 };

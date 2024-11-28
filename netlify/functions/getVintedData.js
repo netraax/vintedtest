@@ -14,14 +14,22 @@ exports.handler = async function(event) {
 
         const html = await response.text();
         const $ = cheerio.load(html);
+        
+        // Log du texte des éléments potentiellement intéressants
+        $('div').each((i, el) => {
+            const text = $(el).text().trim();
+            if (text.includes('articles') || text.includes('évaluation') || text.includes('abonné')) {
+                console.log(`Trouvé: ${text}`);
+            }
+        });
 
         const stats = {
-            profile: $('.web_ui__Text__amplified').text(),
-            evaluations: $('.web_ui__Text__subtitle').text(),
-            articles: $('.profile__items-wrapper').length
+            items: $('.profile__items-wrapper .feed-grid__item').length,
+            rating: $('div').filter((i, el) => $(el).text().includes('étoile')).first().text(),
+            followers: $('span').filter((i, el) => $(el).text().includes('Abonné')).first().text()
         };
 
-        console.log('Données extraites:', stats);
+        console.log('Stats extraites:', stats);
 
         return {
             statusCode: 200,

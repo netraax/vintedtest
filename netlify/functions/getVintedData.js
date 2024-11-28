@@ -1,36 +1,35 @@
-const { Configuration, OpenAIApi } = require('openai');
+const tesseract = require("tesseract.js");
 
-exports.handler = async function(event) {
-    const configuration = new Configuration({
-        apiKey: process.env.OPENAI_API_KEY // On mettra la clé dans les variables d'environnement Netlify
-    });
-    const openai = new OpenAIApi(configuration);
+exports.handler = async function (event) {
+    const { image } = JSON.parse(event.body);
 
     try {
-        const { image } = JSON.parse(event.body);
-        
-        const response = await openai.createImageAnalysis({
-            model: "gpt-4-vision-preview",
+        // 1. Extraire le texte de l'image
+        const { data: { text } } = await tesseract.recognize(image);
+
+        // 2. Analyser avec GPT
+        const configuration = new Configuration({
+            apiKey: process.env.OPENAI_API_KEY,
+        });
+        const openai = new OpenAIApi(configuration);
+
+        const response = await openai.createChatCompletion({
+            model: "gpt-4",
             messages: [
                 {
                     role: "user",
-                    content: [
-                        {
-                            type: "text",
-                            text: "Analyse cette capture d'écran de profil Vinted et extrait : nombre d'articles en vente, articles vendus, et évaluations."
-                        },
-                        {
-                            type: "image_url",
-                            image_url: image
-                        }
-                    ]
-                }
-            ]
+                    content: `Voici un texte extrait d'une capture d'écran Vinted : "${text}". 
+                    Analyse et donne les informations suivantes : 
+                    - Nombre d'articles en vente
+                    - Nombre d'articles vendus
+                    - Nombre d'évaluations.`,
+                },
+            ],
         });
 
         return {
             statusCode: 200,
-            body: JSON.stringify(response.data)
+            body: JSON.stringify(response.data.choices[0].message.content),
         };
     } catch (error) {
         return { statusCode: 500, body: JSON.stringify({ error: error.message }) };

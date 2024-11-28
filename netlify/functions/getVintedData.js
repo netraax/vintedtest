@@ -4,8 +4,6 @@ const cheerio = require('cheerio');
 exports.handler = async function(event) {
     try {
         const vintedUrl = JSON.parse(event.body).url;
-        console.log('URL reçue:', vintedUrl);
-
         const response = await fetch(vintedUrl, {
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
@@ -15,22 +13,19 @@ exports.handler = async function(event) {
         });
 
         const html = await response.text();
-        console.log('HTML reçu:', html.substring(0, 500));
-
         const $ = cheerio.load(html);
-        
-        // Chercher toutes les classes disponibles
-        const allClasses = [];
-        $('*[class]').each((i, el) => {
-            allClasses.push($(el).attr('class'));
-        });
-        console.log('Classes trouvées:', [...new Set(allClasses)]);
+
+        const stats = {
+            profile: $('.web_ui__Text__amplified').text(),
+            evaluations: $('.web_ui__Text__subtitle').text(),
+            articles: $('.profile__items-wrapper').length
+        };
+
+        console.log('Données extraites:', stats);
 
         return {
             statusCode: 200,
-            body: JSON.stringify({
-                classes: allClasses.slice(0, 10)
-            })
+            body: JSON.stringify(stats)
         };
     } catch (error) {
         console.error('Erreur:', error);

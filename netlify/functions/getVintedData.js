@@ -1,40 +1,28 @@
 const fetch = require('node-fetch');
+const cheerio = require('cheerio');
 
 exports.handler = async function(event) {
     try {
         const vintedUrl = JSON.parse(event.body).url;
-        console.log('URL reçue:', vintedUrl);
-        
-        const userId = vintedUrl.split('/member/')[1].split('-')[0];
-        console.log('UserId extrait:', userId);
-        
-        // Appel à l'API Vinted
-        const response = await fetch(`https://www.vinted.fr/api/v2/users/${userId}`, {
-            headers: {
-                'Accept': 'application/json',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-            }
-        });
+        const response = await fetch(vintedUrl);
+        const html = await response.text();
+        const $ = cheerio.load(html);
 
-        const userData = await response.json();
-        
+        // Extraire les données
+        const followers = $('.web_ui_Text_text').first().text().split(' ')[0] || '0';
+        const rating = $('.web_ui_Text_body').first().text() || 'N/A';
+        const evaluations = $('.web_ui_Text_text').eq(1).text().split(' ')[0] || '0';
+
         return {
             statusCode: 200,
-            headers: {
-                'Content-Type': 'application/json'
-            },
             body: JSON.stringify({
-                totalItems: userData.items_count || 0,
-                totalSold: userData.sold_items_count || 0,
-                totalLikes: 'à venir',
-                avgPrice: 'à venir'
+                abonnés: followers,
+                note: rating,
+                evaluations: evaluations
             })
         };
     } catch (error) {
         console.error('Erreur:', error);
-        return {
-            statusCode: 500,
-            body: JSON.stringify({ error: "Une erreur s'est produite lors de l'analyse du profil" })
-        };
+        return { statusCode: 500, body: JSON.stringify({ error: "Erreur d'analyse" }) };
     }
 };

@@ -15,20 +15,21 @@ exports.handler = async function(event) {
         });
 
         const html = await response.text();
-        const $ = cheerio.load(html);
+        console.log('HTML reçu:', html.substring(0, 500));
 
-        console.log('Classes trouvées:', {
-            followers: $('[data-testid="user-followers"]').text(),
-            rating: $('[data-testid="user-rating"]').text(),
-            items: $('[data-testid="user-items"]').text()
+        const $ = cheerio.load(html);
+        
+        // Chercher toutes les classes disponibles
+        const allClasses = [];
+        $('*[class]').each((i, el) => {
+            allClasses.push($(el).attr('class'));
         });
+        console.log('Classes trouvées:', [...new Set(allClasses)]);
 
         return {
             statusCode: 200,
             body: JSON.stringify({
-                followers: $('[data-testid="user-followers"]').text() || 'N/A',
-                rating: $('[data-testid="user-rating"]').text() || 'N/A',
-                items: $('[data-testid="user-items"]').text() || 'N/A'
+                classes: allClasses.slice(0, 10)
             })
         };
     } catch (error) {

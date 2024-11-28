@@ -1,44 +1,40 @@
-async function analyzeScreenshot() {
-    const input = document.getElementById('screenshot-input');
-    const file = input.files[0];
-    
-    if (!file) {
-        alert('Veuillez sélectionner une image');
-        return;
-    }
+const { createWorker } = require('tesseract.js');
 
-    // Afficher l'état de chargement
-    document.getElementById('stats').style.display = 'block';
-    const elements = document.querySelectorAll('.stat-value');
-    elements.forEach(el => {
-        el.textContent = 'Chargement...';
-    });
-
+exports.handler = async function(event) {
     try {
-        // Convertir l'image en base64
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        
-        reader.onload = async () => {
-            const response = await fetch('/.netlify/functions/getVintedData', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ image: reader.result })
-            });
+        if (!event.body) {
+            throw new Error('No image data received');
+        }
 
-            if (!response.ok) throw new Error('Erreur réseau');
-            
-            const data = await response.json();
-            
-            // Mettre à jour l'interface
-            document.getElementById('total-items').textContent = data.articlesEnVente;
-            document.getElementById('total-sold').textContent = data.articlesVendus;
-            document.getElementById('total-likes').textContent = data.evaluations;
+        const imageData = JSON.parse(event.body).image;
+        console.log('Received image data, starting OCR...');
+
+        const worker = await createWorker('fra');
+        console.log('Worker created');
+
+        const { data: { text } } = await worker.recognize(imageData);
+        console.log('OCR text extracted:', text);
+
+        await worker.terminate();
+
+        // Extraire les chiffres du texte
+        const numbers = {
+            articlesEnVente: text.match(/(\d+)\s*articles? en vente/i)?.[1] || '0',
+            articlesVendus: text.match(/(\d+)\s*articles? vendus/i)?.[1] || '0',
+            evaluations: text.match(/(\d+)\s*évaluations?/i)?.[1] || '0'
+        };
+
+        console.log('Extracted numbers:', numbers);
+
+        return {
+            statusCode: 200,
+            body: JSON.stringify(numbers)
         };
     } catch (error) {
-        console.error('Erreur:', error);
-        alert('Erreur lors de l\'analyse de l\'image');
+        console.error('Error:', error);
+        return {
+            statusCode: 500,
+            body: JSON.stringify({ error: error.message })
+        };
     }
-}
+};

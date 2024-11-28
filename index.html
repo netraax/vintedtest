@@ -137,17 +137,17 @@
             Obtenez des statistiques détaillées sur les ventes, les likes et plus encore !
         </p>
 
-        <div class="search-container">
-            <div class="search-box">
-                <input type="url" 
-                       placeholder="Collez l'URL du profil Vinted ici"
-                       id="profile-url">
-                <button onclick="analyzeProfile()">Analyser</button>
-            </div>
-            <p class="example">
-                Exemple : https://www.vinted.fr/member/12345-username
-            </p>
-        </div>
+<div class="search-container">
+    <div class="search-box">
+        <input type="file" 
+               accept="image/*" 
+               id="screenshot-input">
+        <button onclick="analyzeScreenshot()">Analyser</button>
+    </div>
+    <p class="example">
+        Uploadez une capture d'écran d'un profil Vinted
+    </p>
+</div>
 
         <div class="stats-container" id="stats">
             <div class="stats-grid">

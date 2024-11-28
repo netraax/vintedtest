@@ -9,22 +9,29 @@ exports.handler = async function(event) {
         browser = await puppeteer.launch({
             args: [...chromium.args, '--no-sandbox'],
             executablePath: await chromium.executablePath(),
-            headless: true,
+            headless: "new",
             timeout: 8000
         });
 
         const page = await browser.newPage();
         await page.setDefaultNavigationTimeout(8000);
+        
+        console.log('Navigating to:', vintedUrl);
         await page.goto(vintedUrl);
+        console.log('Page loaded');
 
-        const stats = await page.evaluate(() => ({
-            articles: document.querySelector('.profile__items-count')?.textContent || '0',
-            evaluations: document.querySelector('.profile__rating')?.textContent || '0',
-            abonnés: document.querySelector('.profile__followers')?.textContent || '0'
-        }));
+        const stats = await page.evaluate(() => {
+            console.log('Executing page evaluation');
+            return {
+                articles: document.querySelector('.profile__items-count')?.textContent || '0',
+                evaluations: document.querySelector('.profile__rating')?.textContent || '0',
+                abonnés: document.querySelector('.profile__followers')?.textContent || '0'
+            };
+        });
 
         return { statusCode: 200, body: JSON.stringify(stats) };
     } catch (error) {
+        console.error('Error:', error);
         return { statusCode: 500, body: JSON.stringify({ error: error.message }) };
     } finally {
         if (browser) await browser.close();

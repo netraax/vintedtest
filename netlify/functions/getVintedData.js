@@ -9,45 +9,30 @@ exports.handler = async function(event) {
         browser = await puppeteer.launch({
             args: [...chromium.args, '--no-sandbox'],
             executablePath: await chromium.executablePath(),
-            headless: "new"
+            headless: "new",
+            defaultViewport: chromium.defaultViewport,
+            timeout: 5000
         });
 
         const page = await browser.newPage();
-        await page.goto(vintedUrl, {waitUntil: 'networkidle0'});
+        await page.setDefaultNavigationTimeout(5000);
+        await page.goto(vintedUrl, {waitUntil: 'domcontentloaded'});
 
-        console.log('Analysant la page...');
         const stats = await page.evaluate(() => {
-            // Fonction helper pour extraire le texte
-            const getStats = () => {
-                const allStats = Array.from(document.querySelectorAll('.web_ui__Text__text'));
-                const stats = {
-                    articlesEnVente: 0,
-                    articlesVendus: 0,
-                    tauxDeConversion: '0%'
-                };
+            const numberFromText = text => parseInt(text.match(/\d+/)?.[0] || '0');
+            const allDivs = document.querySelectorAll('div');
+            let enVente = 0;
+            let vendus = 0;
 
-                allStats.forEach(stat => {
-                    const text = stat.textContent;
-                    if (text.includes('vente')) {
-                        stats.articlesEnVente = parseInt(text) || 0;
-                    } else if (text.includes('vendu')) {
-                        stats.articlesVendus = parseInt(text) || 0;
-                    }
-                });
+            allDivs.forEach(div => {
+                const text = div.textContent;
+                if (text.includes('en vente')) enVente = numberFromText(text);
+                if (text.includes('vendus')) vendus = numberFromText(text);
+            });
 
-                // Calculer le taux de conversion
-                if (stats.articlesVendus > 0) {
-                    const total = stats.articlesEnVente + stats.articlesVendus;
-                    stats.tauxDeConversion = `${((stats.articlesVendus / total) * 100).toFixed(1)}%`;
-                }
-
-                return stats;
-            };
-
-            return getStats();
+            return {enVente, vendus};
         });
 
-        console.log('Stats trouvées:', stats);
         return { statusCode: 200, body: JSON.stringify(stats) };
     } catch (error) {
         return { statusCode: 500, body: JSON.stringify({ error: error.message }) };

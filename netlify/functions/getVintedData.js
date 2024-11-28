@@ -6,37 +6,39 @@ exports.handler = async function(event) {
         const vintedUrl = JSON.parse(event.body).url;
         const response = await fetch(vintedUrl, {
             headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-                'Accept': 'text/html',
-                'Accept-Language': 'fr-FR,fr;q=0.9'
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+                'Accept-Language': 'fr,fr-FR;q=0.9,en-US;q=0.8,en;q=0.7',
+                'Referer': 'https://www.vinted.fr/',
+                'Cookie': '_vinted_fr_session=1',
+                'Sec-Fetch-Dest': 'document',
+                'Sec-Fetch-Mode': 'navigate',
+                'Sec-Fetch-Site': 'same-origin',
+                'Pragma': 'no-cache',
+                'Cache-Control': 'no-cache'
             }
         });
 
         const html = await response.text();
+        console.log('HTML reçu:', html.includes('web_ui'));
+
         const $ = cheerio.load(html);
-        
-        // Log du texte des éléments potentiellement intéressants
-        $('div').each((i, el) => {
-            const text = $(el).text().trim();
-            if (text.includes('articles') || text.includes('évaluation') || text.includes('abonné')) {
-                console.log(`Trouvé: ${text}`);
-            }
-        });
+
+        // Cherchons le contenu spécifiquement
+        const pageContent = $('body').text();
+        console.log('Texte trouvé:', pageContent.substring(0, 200));
 
         const stats = {
-            items: $('.profile__items-wrapper .feed-grid__item').length,
-            rating: $('div').filter((i, el) => $(el).text().includes('étoile')).first().text(),
-            followers: $('span').filter((i, el) => $(el).text().includes('Abonné')).first().text()
+            items: $('.web_ui__Cell__cell').length,
+            rating: $('.web_ui__Rating__rating').text(),
+            followers: $('[data-testid="user-followers"]').text()
         };
-
-        console.log('Stats extraites:', stats);
 
         return {
             statusCode: 200,
             body: JSON.stringify(stats)
         };
     } catch (error) {
-        console.error('Erreur:', error);
         return { statusCode: 500, body: JSON.stringify({ error: error.message }) };
     }
 };

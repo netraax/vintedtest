@@ -1,7 +1,24 @@
 {
-  "name": "vinted-api",
+  "name": "vinted-analyzer",
   "version": "1.0.0",
+  "description": "Un site pour analyser des captures d'écran Vinted et extraire des données via OpenAI",
+  "main": "index.js",
+  "scripts": {
+    "start": "netlify dev",
+    "build": "netlify build"
+  },
   "dependencies": {
-    "tesseract.js": "^4.1.1"
-  }
+    "axios": "^1.5.0", // Pour les requêtes HTTP
+    "openai": "^4.0.0", // Pour utiliser l'API OpenAI
+    "tesseract.js": "^2.1.5" // Si tu utilises l'OCR Tesseract.js
+  },
+  "devDependencies": {
+    "netlify-cli": "^12.0.0" // Si tu utilises Netlify pour développer localement
+  },
+  "engines": {
+    "node": ">=18.0.0" // Vérifie que ton projet utilise une version compatible de Node.js
+  },
+  "keywords": ["Vinted", "OpenAI", "Netlify", "OCR", "analyse d'image"],
+  "author": "Ton Nom",
+  "license": "MIT"
 }

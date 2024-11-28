@@ -1,17 +1,19 @@
+// Ne pas oublier d'ajouter require('dotenv').config() au début de ton fichier
+require('dotenv').config(); // Charge les variables d'environnement depuis le fichier .env
+
 const { Configuration, OpenAIApi } = require("openai");
 
 exports.handler = async function (event) {
     try {
-        // Parse l'image reçue dans la requête
-        const { image } = JSON.parse(event.body);
-
-        // Configuration de l'API OpenAI
+        // Utiliser la clé API depuis les variables d'environnement
         const configuration = new Configuration({
-            apiKey: process.env.OPENAI_API_KEY, // Récupère la clé API depuis les variables d'environnement
+            apiKey: process.env.OPENAI_API_KEY,  // Vérifie que la clé est bien récupérée
         });
         const openai = new OpenAIApi(configuration);
 
-        // Appel à l'API OpenAI pour analyser l'image
+        // Traitement de l'image reçue dans la requête
+        const { image } = JSON.parse(event.body);
+
         const response = await openai.createImageAnalysis({
             model: "gpt-4-vision-preview",
             messages: [
@@ -31,13 +33,12 @@ exports.handler = async function (event) {
             ],
         });
 
-        // Retourne les données analysées
         return {
             statusCode: 200,
             body: JSON.stringify(response.data),
         };
     } catch (error) {
-        console.error("Erreur pendant l'analyse :", error.message);
+        console.error("Erreur :", error.message);
         return {
             statusCode: 500,
             body: JSON.stringify({ error: error.message }),
